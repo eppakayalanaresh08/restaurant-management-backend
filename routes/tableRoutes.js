@@ -6,6 +6,7 @@ const authMiddleware = require('../middleware/auth');
 // Public routes
 router.get('/', tableController.getAllTables);
 router.get('/:id', tableController.getTableById);
+
 router.get('/:id/qr', tableController.getTableQR);
 router.get('/availability/check', tableController.checkAvailability);
 
@@ -14,5 +15,7 @@ router.post('/',  tableController.createTable);
 router.put('/:id/status', authMiddleware, tableController.updateTableStatus);
 router.put('/:id/assign', authMiddleware, tableController.assignServer);
 router.post('/reservations', authMiddleware, tableController.createReservation);
+
+router.delete('/:id', tableController.deleteTable);
 
 module.exports = router;

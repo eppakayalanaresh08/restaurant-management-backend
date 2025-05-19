@@ -59,6 +59,38 @@ exports.getTableById = async (req, res) => {
   }
 };
 
+
+
+exports.deleteTable = async (req, res) => {
+  try {
+    // Check for active reservations first
+    const activeReservations = await Reservation.find({ 
+      table: req.params.id,
+      status: { $in: ['confirmed', 'pending'] }
+    });
+    
+    if (activeReservations.length > 0) {
+      return res.status(400).json({ 
+        message: 'Cannot delete table with active reservations',
+        reservations: activeReservations.map(r => r._id)
+      });
+    }
+
+    // Delete the table
+    const table = await Table.findByIdAndDelete(req.params.id);
+    
+    if (!table) return res.status(404).json({ message: 'Table not found' });
+    
+    // Optionally: Delete associated QR code file
+    // fs.unlinkSync(path.join(__dirname, '../public/qrcodes', table.qrCode));
+    
+    res.status(200).json({ message: 'Table deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting table', error: error.message });
+  }
+};
+
+
 // Update table status
 exports.updateTableStatus = async (req, res) => {
   try {

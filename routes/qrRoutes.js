@@ -8,6 +8,6 @@ router.get('/:filename', qrController.serveQRCode);
 
 // Protected routes (require authentication)
 router.post('/menu', authMiddleware, qrController.generateMenuQR);
-router.post('/tables/:tableId', authMiddleware, qrController.generateTableQR);
+router.post('/tables/:tableId', qrController.generateTableQR);
 
 module.exports = router;

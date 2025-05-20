@@ -234,3 +234,4 @@ exports.getTableQR = async (req, res) => {
     res.status(500).json({ message: 'Error fetching QR code', error: error.message });
   }
 };
+

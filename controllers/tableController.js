@@ -37,14 +37,44 @@ exports.createTable = async (req, res) => {
 };
 
 // Get all tables
+// exports.getAllTables = async (req, res) => {
+//   try {
+//     const tables = await Table.find().populate('assignedServer', 'name');
+//     res.status(200).json(tables);
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error fetching tables', error: error.message });
+//   }
+// };
+
+
+
+
 exports.getAllTables = async (req, res) => {
   try {
-    const tables = await Table.find().populate('assignedServer', 'name');
+    const { status, location, minCapacity } = req.query;
+    
+    const filter = {};
+    if (status) filter.status = status;
+    if (location) filter.location = location;
+    if (minCapacity) filter.capacity = { $gte: parseInt(minCapacity) };
+    
+    const tables = await Table.find(filter).populate('assignedServer', 'name');
     res.status(200).json(tables);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching tables', error: error.message });
   }
 };
+
+
+
+
+
+
+
+
+
+
+
 
 // Get table by ID
 exports.getTableById = async (req, res) => {
@@ -60,6 +90,102 @@ exports.getTableById = async (req, res) => {
 };
 
 
+// Edit table - Update all fields
+// exports.updateTable = async (req, res) => {
+//   try {
+//     const { tableNumber, location, capacity, status } = req.body;
+//     const tableId = req.params.id;
+
+//     // Check if table exists
+//     const existingTable = await Table.findById(tableId);
+//     if (!existingTable) {
+//       return res.status(404).json({ message: 'Table not found' });
+//     }
+
+//     // Check if new table number already exists (if changed)
+//     if (tableNumber && tableNumber !== existingTable.tableNumber) {
+//       const tableWithSameNumber = await Table.findOne({ tableNumber });
+//       if (tableWithSameNumber) {
+//         return res.status(400).json({ message: 'Table number already exists' });
+//       }
+//     }
+
+//     // Prepare update object
+//     const updateData = {};
+//     if (tableNumber) updateData.tableNumber = tableNumber;
+//     if (location) updateData.location = location;
+//     if (capacity) updateData.capacity = capacity;
+//     if (status) updateData.status = status;
+
+//     // Update the table
+//     const updatedTable = await Table.findByIdAndUpdate(
+//       tableId,
+//       updateData,
+//       { new: true, runValidators: true }
+//     ).populate('assignedServer', 'name');
+
+//     res.status(200).json({
+//       message: 'Table updated successfully',
+//       table: updatedTable
+//     });
+//   } catch (error) {
+//     res.status(500).json({ 
+//       message: 'Error updating table', 
+//       error: error.message 
+//     });
+//   }
+// };
+
+
+
+
+exports.updateTable = async (req, res) => {
+  try {
+    const { tableNumber, location, capacity, status } = req.body;
+    const tableId = req.params.id;
+
+    // Check if table exists
+    const existingTable = await Table.findById(tableId);
+    if (!existingTable) {
+      return res.status(404).json({ message: 'Table not found' });
+    }
+
+    // Check if new table number already exists (excluding current table)
+    if (tableNumber && tableNumber !== existingTable.tableNumber) {
+      const tableWithSameNumber = await Table.findOne({ 
+        tableNumber,
+        _id: { $ne: tableId } // Exclude current table
+      });
+      if (tableWithSameNumber) {
+        return res.status(400).json({ message: 'Table number already exists' });
+      }
+    }
+
+    // Prepare update object
+    const updateData = {};
+    if (tableNumber) updateData.tableNumber = tableNumber;
+    if (location) updateData.location = location;
+    if (capacity) updateData.capacity = capacity;
+    if (status) updateData.status = status;
+
+    // Update the table
+    const updatedTable = await Table.findByIdAndUpdate(
+      tableId,
+      updateData,
+      { new: true, runValidators: true }
+    ).populate('assignedServer', 'name');
+
+    res.status(200).json({
+      message: 'Table updated successfully',
+      table: updatedTable
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      message: 'Error updating table', 
+      error: error.message 
+    });
+  }
+};
 
 exports.deleteTable = async (req, res) => {
   try {
@@ -113,142 +239,6 @@ exports.updateTableStatus = async (req, res) => {
     res.status(500).json({ message: 'Error updating table status', error: error.message });
   }
 };
-
-
-
-
-// // Update table details
-// exports.updateTable = async (req, res) => {
-//   try {
-//     const { tableNumber, location, capacity, status } = req.body;
-    
-//     // Check if table exists
-//     const table = await Table.findById(req.params.id);
-//     if (!table) {
-//       return res.status(404).json({ message: 'Table not found' });
-//     }
-    
-//     // Check if new table number already exists (if it's being changed)
-//     if (tableNumber && tableNumber !== table.tableNumber) {
-//       const existingTable = await Table.findOne({ tableNumber });
-//       if (existingTable) {
-//         return res.status(400).json({ message: 'Table number already exists' });
-//       }
-//     }
-    
-//     // Update table fields
-//     if (tableNumber) table.tableNumber = tableNumber;
-//     if (location) table.location = location;
-//     if (capacity) table.capacity = capacity;
-//     if (status) table.status = status;
-    
-//     await table.save();
-    
-//     res.status(200).json({
-//       message: 'Table updated successfully',
-//       table,
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: 'Error updating table', error: error.message });
-//   }
-// };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// exports.updateTable = async (req, res) => {
-//   try {
-//     const { tableNumber, location, capacity, status } = req.body;
-//     console.log(`Updating table ${req.params.id} with:`, req.body);
-
-//     // Validate required fields
-//     if (!tableNumber || !location || !capacity) {
-//       return res.status(400).json({ message: 'Missing required fields' });
-//     }
-
-//     // Find table
-//     const table = await Table.findById(req.params.id);
-//     if (!table) {
-//       return res.status(404).json({ message: 'Table not found' });
-//     }
-
-//     // Check for duplicate table number if changed
-//     if (tableNumber !== table.tableNumber) {
-//       const existingTable = await Table.findOne({ tableNumber });
-//       if (existingTable) {
-//         return res.status(400).json({ message: 'Table number already exists' });
-//       }
-//     }
-
-//     // Update fields
-//     table.tableNumber = tableNumber;
-//     table.location = location;
-//     table.capacity = capacity;
-//     if (status) table.status = status;
-
-//     await table.save();
-//     res.status(200).json({ message: 'Table updated successfully', table });
-
-//   } catch (error) {
-//     console.error('Update table error:', error);
-//     res.status(500).json({ message: 'Error updating table', error: error.message });
-//   }
-// };
-
-
-
-
-exports.updateTable = async (req, res) => {
-  try {
-    const { tableNumber, location, capacity, status } = req.body;
-    console.log(`Updating table ${req.params.id} with:`, req.body);
-
-    // Find table
-    const table = await Table.findById(req.params.id);
-    if (!table) {
-      return res.status(404).json({ message: 'Table not found' });
-    }
-
-    // Check for duplicate table number ONLY if it's being changed
-    if (tableNumber && tableNumber !== table.tableNumber) {
-      const existingTable = await Table.findOne({ tableNumber });
-      if (existingTable) {
-        return res.status(400).json({ message: 'Table number already exists' });
-      }
-      table.tableNumber = tableNumber;
-    }
-
-    // Update other fields
-    if (location) table.location = location;
-    if (capacity) table.capacity = capacity;
-    if (status) table.status = status;
-
-    await table.save();
-    res.status(200).json({ message: 'Table updated successfully', table });
-
-  } catch (error) {
-    console.error('Update table error:', error);
-    res.status(500).json({ message: 'Error updating table', error: error.message });
-  }
-};
-
-
-
 
 
 
@@ -376,4 +366,140 @@ exports.getTableQR = async (req, res) => {
     res.status(500).json({ message: 'Error fetching QR code', error: error.message });
   }
 };
+
+
+
+
+
+
+
+// // Update table details
+// exports.updateTable = async (req, res) => {
+//   try {
+//     const { tableNumber, location, capacity, status } = req.body;
+    
+//     // Check if table exists
+//     const table = await Table.findById(req.params.id);
+//     if (!table) {
+//       return res.status(404).json({ message: 'Table not found' });
+//     }
+    
+//     // Check if new table number already exists (if it's being changed)
+//     if (tableNumber && tableNumber !== table.tableNumber) {
+//       const existingTable = await Table.findOne({ tableNumber });
+//       if (existingTable) {
+//         return res.status(400).json({ message: 'Table number already exists' });
+//       }
+//     }
+    
+//     // Update table fields
+//     if (tableNumber) table.tableNumber = tableNumber;
+//     if (location) table.location = location;
+//     if (capacity) table.capacity = capacity;
+//     if (status) table.status = status;
+    
+//     await table.save();
+    
+//     res.status(200).json({
+//       message: 'Table updated successfully',
+//       table,
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error updating table', error: error.message });
+//   }
+// };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// exports.updateTable = async (req, res) => {
+//   try {
+//     const { tableNumber, location, capacity, status } = req.body;
+//     console.log(`Updating table ${req.params.id} with:`, req.body);
+
+//     // Validate required fields
+//     if (!tableNumber || !location || !capacity) {
+//       return res.status(400).json({ message: 'Missing required fields' });
+//     }
+
+//     // Find table
+//     const table = await Table.findById(req.params.id);
+//     if (!table) {
+//       return res.status(404).json({ message: 'Table not found' });
+//     }
+
+//     // Check for duplicate table number if changed
+//     if (tableNumber !== table.tableNumber) {
+//       const existingTable = await Table.findOne({ tableNumber });
+//       if (existingTable) {
+//         return res.status(400).json({ message: 'Table number already exists' });
+//       }
+//     }
+
+//     // Update fields
+//     table.tableNumber = tableNumber;
+//     table.location = location;
+//     table.capacity = capacity;
+//     if (status) table.status = status;
+
+//     await table.save();
+//     res.status(200).json({ message: 'Table updated successfully', table });
+
+//   } catch (error) {
+//     console.error('Update table error:', error);
+//     res.status(500).json({ message: 'Error updating table', error: error.message });
+//   }
+// };
+
+
+
+
+// exports.updateTable = async (req, res) => {
+//   try {
+//     const { tableNumber, location, capacity, status } = req.body;
+//     console.log(`Updating table ${req.params.id} with:`, req.body);
+
+//     // Find table
+//     const table = await Table.findById(req.params.id);
+//     if (!table) {
+//       return res.status(404).json({ message: 'Table not found' });
+//     }
+
+//     // Check for duplicate table number ONLY if it's being changed
+//     if (tableNumber && tableNumber !== table.tableNumber) {
+//       const existingTable = await Table.findOne({ tableNumber });
+//       if (existingTable) {
+//         return res.status(400).json({ message: 'Table number already exists' });
+//       }
+//       table.tableNumber = tableNumber;
+//     }
+
+//     // Update other fields
+//     if (location) table.location = location;
+//     if (capacity) table.capacity = capacity;
+//     if (status) table.status = status;
+
+//     await table.save();
+//     res.status(200).json({ message: 'Table updated successfully', table });
+
+//   } catch (error) {
+//     console.error('Update table error:', error);
+//     res.status(500).json({ message: 'Error updating table', error: error.message });
+//   }
+// };
 

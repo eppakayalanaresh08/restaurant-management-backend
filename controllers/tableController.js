@@ -171,15 +171,52 @@ exports.updateTableStatus = async (req, res) => {
 
 
 
+// exports.updateTable = async (req, res) => {
+//   try {
+//     const { tableNumber, location, capacity, status } = req.body;
+//     console.log(`Updating table ${req.params.id} with:`, req.body);
+
+//     // Validate required fields
+//     if (!tableNumber || !location || !capacity) {
+//       return res.status(400).json({ message: 'Missing required fields' });
+//     }
+
+//     // Find table
+//     const table = await Table.findById(req.params.id);
+//     if (!table) {
+//       return res.status(404).json({ message: 'Table not found' });
+//     }
+
+//     // Check for duplicate table number if changed
+//     if (tableNumber !== table.tableNumber) {
+//       const existingTable = await Table.findOne({ tableNumber });
+//       if (existingTable) {
+//         return res.status(400).json({ message: 'Table number already exists' });
+//       }
+//     }
+
+//     // Update fields
+//     table.tableNumber = tableNumber;
+//     table.location = location;
+//     table.capacity = capacity;
+//     if (status) table.status = status;
+
+//     await table.save();
+//     res.status(200).json({ message: 'Table updated successfully', table });
+
+//   } catch (error) {
+//     console.error('Update table error:', error);
+//     res.status(500).json({ message: 'Error updating table', error: error.message });
+//   }
+// };
+
+
+
+
 exports.updateTable = async (req, res) => {
   try {
     const { tableNumber, location, capacity, status } = req.body;
     console.log(`Updating table ${req.params.id} with:`, req.body);
-
-    // Validate required fields
-    if (!tableNumber || !location || !capacity) {
-      return res.status(400).json({ message: 'Missing required fields' });
-    }
 
     // Find table
     const table = await Table.findById(req.params.id);
@@ -187,18 +224,18 @@ exports.updateTable = async (req, res) => {
       return res.status(404).json({ message: 'Table not found' });
     }
 
-    // Check for duplicate table number if changed
-    if (tableNumber !== table.tableNumber) {
+    // Check for duplicate table number ONLY if it's being changed
+    if (tableNumber && tableNumber !== table.tableNumber) {
       const existingTable = await Table.findOne({ tableNumber });
       if (existingTable) {
         return res.status(400).json({ message: 'Table number already exists' });
       }
+      table.tableNumber = tableNumber;
     }
 
-    // Update fields
-    table.tableNumber = tableNumber;
-    table.location = location;
-    table.capacity = capacity;
+    // Update other fields
+    if (location) table.location = location;
+    if (capacity) table.capacity = capacity;
     if (status) table.status = status;
 
     await table.save();
@@ -209,9 +246,6 @@ exports.updateTable = async (req, res) => {
     res.status(500).json({ message: 'Error updating table', error: error.message });
   }
 };
-
-
-
 
 
 
